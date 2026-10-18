@@ -1,0 +1,96 @@
+diff --git a/src/main.rs b/src/main.rs
+index cbe8b93..d4da746 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -102,6 +102,7 @@ mod sky;
+ mod sky_performance_check;
+ mod sky_sequence;
+ mod snark;
++mod state_export;
+ mod story;
+ mod tan;
+ mod targeting;
+diff --git a/src/viewer.rs b/src/viewer.rs
+index 7b42aa1..f795426 100644
+--- a/src/viewer.rs
++++ b/src/viewer.rs
+@@ -526,6 +526,10 @@ mod start;
+ pub async fn run(mut assets: Assets, mut options: Options) -> Result<()> {
+     // Release cursor/audio before Miniquad destroys its native request queue.
+     prevent_quit();
++    // Optional companion HUD feed (second display): serve live state on loopback.
++    if crate::state_export::enabled() {
++        crate::state_export::start();
++    }
+     let ui = crate::ui::Ui::load(&mut assets)?;
+     // Explicit native layout diagnostic; never opens or modifies player saves.
+     if options.frames.is_some() && std::env::var_os("LOOKING_GLASS_PRESENTATION_CHECK").is_some() {
+@@ -880,6 +884,38 @@ pub async fn run(mut assets: Assets, mut options: Options) -> Result<()> {
+     retry.remember(game_snapshot!());
+     loop {
+         let mut frame_profile = crate::frame_profile::span("frame_cpu");
++        // Publish the previous frame's settled state to the companion HUD feed.
++        // Cheap (one mutex write); the server thread does all I/O off-thread.
++        if crate::state_export::enabled() {
++            let sel = stats.selected();
++            let eye = player.eye();
++            crate::state_export::publish(crate::state_export::Snapshot {
++                t: frame as u64,
++                map: maps[current].clone(),
++                pos: [eye.x, eye.y, eye.z],
++                yaw,
++                health: stats.sanity(),
++                will: stats.will(),
++                alive: stats.alive(),
++                weapon: stats.equipped(),
++                selected: sel,
++                weapon_name: if stats.equipped().is_some() {
++                    crate::inventory::WEAPONS[sel].1.to_string()
++                } else {
++                    String::new()
++                },
++                owned: [
++                    stats.copies(0), stats.copies(1), stats.copies(2), stats.copies(3),
++                    stats.copies(4), stats.copies(5), stats.copies(6), stats.copies(7),
++                    stats.copies(8), stats.copies(9),
++                ],
++                powers: [
++                    stats.powers.rage, stats.powers.tea, stats.powers.stopped,
++                    stats.powers.recharge,
++                ],
++                inventory: stats.loot.keys().cloned().collect(),
++            });
++        }
+         let current_aim = vec3(
+             yaw.cos() * pitch.cos(),
+             yaw.sin() * pitch.cos(),
+@@ -1526,6 +1562,7 @@ pub async fn run(mut assets: Assets, mut options: Options) -> Result<()> {
+         );
+         hud.update(dt);
+         let inv_grace = in_overlay_grace && inventory_menu;
++        let dash_equip = crate::state_export::take_equip(&maps[current]);
+         if focused && !console_input && stats.alive() && !menu && (inventory_menu || !paused) {
+             let keys = [
+                 KeyCode::Key1,
+@@ -1550,7 +1587,7 @@ pub async fn run(mut assets: Assets, mut options: Options) -> Result<()> {
+                     }
+                 })
+             };
+-            if let Some(i) = selected {
++            if let Some(i) = selected.or(dash_equip.filter(|_| !scripted_view)) {
+                 if stats.select(i) {
+                     hud.selected(&stats);
+                     if inventory_menu && input.using_touch {
+diff --git a/tools/package_android.py b/tools/package_android.py
+index 529cc96..6789f1a 100644
+--- a/tools/package_android.py
++++ b/tools/package_android.py
+@@ -1279,6 +1279,8 @@ def try_build_signed_apk(
+             javac,
+             "--release",
+             "8",
++            "-encoding",
++            "UTF-8",
+             "-classpath",
+             str(android_jar),
+             "-d",

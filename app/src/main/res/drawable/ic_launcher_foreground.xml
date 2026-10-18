@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Original gothic looking-glass emblem, kept inside the adaptive icon safe zone. -->
+    <path android:fillColor="#D4A94E" android:pathData="M54,20 L60,27 C75,30 83,40 83,54 C83,68 75,78 60,81 L54,88 L48,81 C33,78 25,68 25,54 C25,40 33,30 48,27 Z" />
+    <path android:fillColor="#35101A" android:pathData="M54,28 C68,28 78,39 78,54 C78,69 68,80 54,80 C40,80 30,69 30,54 C30,39 40,28 54,28 Z" />
+    <path android:fillColor="#721D32" android:pathData="M54,32 C66,32 74,42 74,54 C74,66 66,76 54,76 C42,76 34,66 34,54 C34,42 42,32 54,32 Z" />
+    <path android:fillColor="#91273E" android:pathData="M54,32 C42,32 34,42 34,54 C34,60 36,65 40,69 L65,35 C62,33 58,32 54,32 Z" />
+    <!-- Ivory heart and keyhole: legible even in a small launcher grid. -->
+    <path android:fillColor="#F4E5C7" android:pathData="M54,49 C43,36 33,49 43,59 L54,70 L65,59 C75,49 65,36 54,49 Z" />
+    <path android:fillColor="#35101A" android:pathData="M54,51 C48,51 48,59 52,60 L50,65 L58,65 L56,60 C60,59 60,51 54,51 Z" />
+    <path android:fillColor="#FFF1CC" android:pathData="M54,23 L57,27 L54,31 L51,27 Z M54,77 L57,81 L54,85 L51,81 Z M27,54 L30,51 L33,54 L30,57 Z M75,54 L78,51 L81,54 L78,57 Z" />
+</vector>
